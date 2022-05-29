@@ -64,3 +64,64 @@ int main()
 
 	return 0;
 }
+
+
+
+
+
+
+//////////////////////////////////////////////////////
+//
+//      windows enum process
+//
+//////////////////////////////////////////////////////
+
+#include <stdio.h>
+#include <Windows.h>
+#include <TlHelp32.h>
+#include <Psapi.h>
+#include <string>
+
+int main()
+{
+	HANDLE h_process_snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (h_process_snap == INVALID_HANDLE_VALUE) {
+		printf("[CreateToolhelp32Snapshot error id]: %d\r\n", GetLastError());
+		return 0;
+	}
+
+	PROCESSENTRY32 pe32;	// save process infomation struct
+	pe32.dwSize = sizeof(PROCESSENTRY32);	// set struct size
+
+	if (!Process32First(h_process_snap, &pe32)) {
+		printf("[Process32First error id]: %d\r\n", GetLastError());
+		CloseHandle(h_process_snap);
+		return 0;
+	}
+
+	do {
+		char process_path[MAX_PATH] = { 0 };
+		BOOL bl_Wow64Process = FALSE;
+		std::string str_process_name = pe32.szExeFile;
+		
+		HANDLE h_process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+		if (h_process != INVALID_HANDLE_VALUE) {
+			// module path is process path
+			GetModuleFileNameEx(h_process, NULL, process_path, sizeof(process_path));
+
+			IsWow64Process(h_process, &bl_Wow64Process);
+			if (bl_Wow64Process) {
+				// is 64 process
+				str_process_name += "(32-bit)";
+			}
+			CloseHandle(h_process);
+		}
+		printf("%-50s\t%10d\t%s\r\n", str_process_name.c_str(), pe32.th32ProcessID, process_path);
+
+	} while (Process32Next(h_process_snap, &pe32));
+
+	getchar();
+	return 0;
+}
+
+
