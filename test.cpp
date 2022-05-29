@@ -67,9 +67,6 @@ int main()
 
 
 
-
-
-
 //////////////////////////////////////////////////////
 //
 //      windows enum process
@@ -124,4 +121,16 @@ int main()
 	return 0;
 }
 
+void KillProcess(CString chProcessName)
+{
+	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE,FindProcess(chProcessName.GetBuffer(0)));
 
+	if (hProcess == NULL)
+	{
+		return;
+	}
+	TerminateProcess(hProcess, 0);
+	CloseHandle(hProcess);
+
+	return;
+}
